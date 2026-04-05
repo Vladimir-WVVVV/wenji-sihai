@@ -50,3 +50,22 @@ export async function PATCH(request: NextRequest, context: Context) {
 
   return ok(updated, "状态更新成功");
 }
+
+export async function DELETE(request: NextRequest, context: Context) {
+  const session = await requireAdminApiSession(request);
+  if (!session) {
+    return fail("未登录或登录已过期", 401);
+  }
+
+  const { id } = await context.params;
+  const existed = await getAdminRecordById(session, Number(id));
+  if (!existed) {
+    return fail("记录不存在或无权限删除", 404);
+  }
+
+  await prisma.submission.delete({
+    where: { id: Number(id) },
+  });
+
+  return ok({ id: Number(id) }, "记录删除成功");
+}

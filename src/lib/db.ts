@@ -1,4 +1,5 @@
 import { Prisma, SubmissionStatus } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -54,38 +55,48 @@ function normalizeDate(value: Date | undefined) {
   return value;
 }
 
-export async function getBootstrapData() {
-  const schools = await prisma.school.findMany({
-    where: { isActive: true },
-    orderBy: { id: "asc" },
-    select: {
-      id: true,
-      code: true,
-      name: true,
-      booths: {
-        where: { isActive: true },
-        orderBy: { id: "asc" },
-        select: {
-          id: true,
-          name: true,
-          isActive: true,
+const getBootstrapDataCached = unstable_cache(
+  async () => {
+    const schools = await prisma.school.findMany({
+      where: { isActive: true },
+      orderBy: { id: "asc" },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        booths: {
+          where: { isActive: true },
+          orderBy: { id: "asc" },
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  const letterTypes = await prisma.letterType.findMany({
-    where: { isActive: true },
-    orderBy: { id: "asc" },
-    select: {
-      id: true,
-      code: true,
-      name: true,
-      isActive: true,
-    },
-  });
+    const letterTypes = await prisma.letterType.findMany({
+      where: { isActive: true },
+      orderBy: { id: "asc" },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        isActive: true,
+      },
+    });
 
-  return { schools, letterTypes };
+    return { schools, letterTypes };
+  },
+  ["bootstrap-data"],
+  {
+    revalidate: 30,
+  },
+);
+
+export async function getBootstrapData() {
+  return getBootstrapDataCached();
 }
 
 export async function getStudentQueryResults(input: {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AdminDeleteSubmissionButton } from "@/components/admin/AdminDeleteSubmissionButton";
 import { AdminStatusForm } from "@/components/admin/AdminStatusForm";
 import { getAdminRecordById } from "@/lib/db";
 import { requireAdminSession } from "@/lib/auth";
@@ -77,7 +78,21 @@ export default async function AdminRecordDetailPage({ params }: Props) {
         </div>
 
         <aside className="card p-6">
-          <AdminStatusForm submissionId={record.id} currentStatus={record.status} />
+          <div className="space-y-6">
+            <AdminStatusForm submissionId={record.id} currentStatus={record.status} />
+            <div className="border-t border-slate-200 pt-6">
+              <h2 className="text-lg font-semibold text-slate-950">删除记录</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                删除后不会回退编号计数，请谨慎操作。
+              </p>
+              <div className="mt-4">
+                <AdminDeleteSubmissionButton
+                  submissionId={record.id}
+                  redirectTo="/admin/records"
+                />
+              </div>
+            </div>
+          </div>
         </aside>
       </div>
     </div>

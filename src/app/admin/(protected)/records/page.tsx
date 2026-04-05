@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { SubmissionStatus } from "@prisma/client";
 
 import { AdminRecordsFilters } from "@/components/admin/AdminRecordsFilters";
+import { AdminRecordsTable } from "@/components/admin/AdminRecordsTable";
 import { requireAdminSession } from "@/lib/auth";
 import {
   STATUS_CODE_TO_NAME,
@@ -68,6 +68,19 @@ export default async function AdminRecordsPage({ searchParams }: Props) {
     }),
   ]);
 
+  const initialRecords = records.map((record) => ({
+    id: record.id,
+    displayCode: record.displayCode,
+    schoolName: record.school.name,
+    boothName: record.booth.name,
+    senderName: record.senderName,
+    studentId: record.studentId,
+    phone: record.phone,
+    letterTypeName: record.letterType.name,
+    statusName: STATUS_CODE_TO_NAME[record.status],
+    createdAtLabel: formatDateTime(record.createdAt),
+  }));
+
   return (
     <div className="space-y-6">
       <div className="card p-6">
@@ -95,53 +108,7 @@ export default async function AdminRecordsPage({ searchParams }: Props) {
         }}
       />
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
-              <tr>
-                <th className="px-4 py-3">编号</th>
-                <th className="px-4 py-3">学校</th>
-                <th className="px-4 py-3">摊位</th>
-                <th className="px-4 py-3">寄件人姓名</th>
-                <th className="px-4 py-3">学号</th>
-                <th className="px-4 py-3">联系方式</th>
-                <th className="px-4 py-3">信件类型</th>
-                <th className="px-4 py-3">当前状态</th>
-                <th className="px-4 py-3">提交时间</th>
-                <th className="px-4 py-3">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((record) => (
-                <tr key={record.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3">{record.displayCode}</td>
-                  <td className="px-4 py-3">{record.school.name}</td>
-                  <td className="px-4 py-3">{record.booth.name}</td>
-                  <td className="px-4 py-3">{record.senderName}</td>
-                  <td className="px-4 py-3">{record.studentId}</td>
-                  <td className="px-4 py-3">{record.phone}</td>
-                  <td className="px-4 py-3">{record.letterType.name}</td>
-                  <td className="px-4 py-3">{STATUS_CODE_TO_NAME[record.status]}</td>
-                  <td className="px-4 py-3">{formatDateTime(record.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/records/${record.id}`} className="secondary-button">
-                      查看详情
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {records.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-8 text-center text-slate-500" colSpan={10}>
-                    当前筛选条件下暂无记录。
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <AdminRecordsTable initialRecords={initialRecords} />
     </div>
   );
 }
