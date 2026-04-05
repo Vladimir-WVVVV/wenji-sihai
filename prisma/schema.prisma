@@ -81,6 +81,7 @@ model Submission {
   senderName           String           @map("sender_name")
   studentId            String           @map("student_id")
   phone                String
+  senderAddress        String?          @map("sender_address")
   college              String? 
   grade                String?
   recipientName        String?          @map("recipient_name")

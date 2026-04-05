@@ -3,6 +3,13 @@ import Link from "next/link";
 import { QuestionnaireQrCard } from "@/components/student/QuestionnaireQrCard";
 
 export default function HomePage() {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL &&
+    !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : "https://wenji-sihai.vercel.app";
+  const applyUrl = `${siteUrl.replace(/\/$/, "")}/apply`;
+
   return (
     <main className="page-shell py-10 sm:py-14">
       <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
@@ -46,7 +53,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <QuestionnaireQrCard />
+        <QuestionnaireQrCard url={applyUrl} />
       </section>
     </main>
   );

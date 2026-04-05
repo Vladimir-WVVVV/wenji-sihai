@@ -54,9 +54,10 @@ export default async function AdminRecordDetailPage({ params }: Props) {
             <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
               <div>寄件人姓名：{record.senderName}</div>
               <div>学号：{record.studentId}</div>
-              <div>联系方式：{record.phone}</div>
+              <div>寄信人联系方式：{record.phone}</div>
               <div>学院 / 专业：{record.college || "未填写"}</div>
               <div>年级：{record.grade || "未填写"}</div>
+              <div className="sm:col-span-2">寄信人住址：{record.senderAddress || "未填写"}</div>
             </div>
           </section>
 

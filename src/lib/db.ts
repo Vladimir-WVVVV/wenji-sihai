@@ -58,10 +58,18 @@ export async function getBootstrapData() {
   const schools = await prisma.school.findMany({
     where: { isActive: true },
     orderBy: { id: "asc" },
-    include: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
       booths: {
         where: { isActive: true },
         orderBy: { id: "asc" },
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+        },
       },
     },
   });
@@ -69,6 +77,12 @@ export async function getBootstrapData() {
   const letterTypes = await prisma.letterType.findMany({
     where: { isActive: true },
     orderBy: { id: "asc" },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      isActive: true,
+    },
   });
 
   return { schools, letterTypes };
@@ -242,7 +256,8 @@ export function mapRecordToCsvRow(
     摊位: record.booth.name,
     寄件人姓名: record.senderName,
     学号: record.studentId,
-    联系方式: record.phone,
+    寄信人联系方式: record.phone,
+    寄信人住址: record.senderAddress ?? "",
     信件类型: record.letterType.name,
     当前状态: STATUS_CODE_TO_NAME[record.status],
     提交时间: record.createdAt.toLocaleString("zh-CN"),

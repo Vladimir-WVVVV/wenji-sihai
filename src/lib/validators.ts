@@ -12,6 +12,7 @@ export const submissionSchema = z
     senderName: z.string().min(2, "请填写寄件人姓名").max(30),
     studentId: z.string().min(3, "请填写学号").max(50),
     phone: phoneSchema,
+    senderAddress: z.string().min(5, "请填写寄信人住址").max(200),
     college: z.string().max(100).optional().or(z.literal("")),
     grade: z.string().max(50).optional().or(z.literal("")),
     recipientName: z.string().max(50).optional().or(z.literal("")),

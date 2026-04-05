@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 type BoothRow = {
@@ -31,8 +30,8 @@ export function BoothManager({
   defaultSchoolCode,
   isSuperAdmin,
 }: Props) {
-  const router = useRouter();
   const [schoolCode, setSchoolCode] = useState(defaultSchoolCode || schools[0]?.code || "");
+  const [boothRows, setBoothRows] = useState(booths);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,10 +40,10 @@ export function BoothManager({
 
   const visibleBooths = useMemo(() => {
     if (isSuperAdmin && schoolCode) {
-      return booths.filter((item) => item.school.code === schoolCode);
+      return boothRows.filter((item) => item.school.code === schoolCode);
     }
-    return booths;
-  }, [booths, isSuperAdmin, schoolCode]);
+    return boothRows;
+  }, [boothRows, isSuperAdmin, schoolCode]);
 
   async function createBooth(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,7 +65,7 @@ export function BoothManager({
 
     setName("");
     setMessage("新增成功");
-    router.refresh();
+    setBoothRows((current) => [...current, result.data]);
   }
 
   async function updateBooth(id: number, payload: { name?: string; isActive?: boolean }) {
@@ -83,7 +82,9 @@ export function BoothManager({
     setEditingId(null);
     setEditingName("");
     setMessage("更新成功");
-    router.refresh();
+    setBoothRows((current) =>
+      current.map((item) => (item.id === id ? result.data : item)),
+    );
   }
 
   return (

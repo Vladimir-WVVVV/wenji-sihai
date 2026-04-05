@@ -30,6 +30,7 @@ type FormState = {
   senderName: string;
   studentId: string;
   phone: string;
+  senderAddress: string;
   college: string;
   grade: string;
   letterTypeCode: "DX" | "BDX" | "HX";
@@ -47,6 +48,7 @@ const initialState: FormState = {
   senderName: "",
   studentId: "",
   phone: "",
+  senderAddress: "",
   college: "",
   grade: "",
   letterTypeCode: "DX",
@@ -197,12 +199,24 @@ export function SubmissionForm({ schools }: Props) {
             <input className="input" value={form.studentId} onChange={(e) => updateForm("studentId", e.target.value)} />
           </div>
           <div>
-            <label className="label">联系方式</label>
+            <label className="label">寄信人联系方式</label>
             <input className="input" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} placeholder="请输入手机号" />
           </div>
           <div>
             <label className="label">学院 / 专业</label>
             <input className="input" value={form.college} onChange={(e) => updateForm("college", e.target.value)} />
+          </div>
+          <div className="md:col-span-2">
+            <label className="label">寄信人住址</label>
+            <textarea
+              className="input min-h-24"
+              value={form.senderAddress}
+              onChange={(e) => updateForm("senderAddress", e.target.value)}
+              placeholder="请填写可接收回信的详细地址"
+            />
+            {fieldErrors.senderAddress?.[0] ? (
+              <p className="mt-1 text-xs text-rose-600">{fieldErrors.senderAddress[0]}</p>
+            ) : null}
           </div>
           <div>
             <label className="label">年级</label>

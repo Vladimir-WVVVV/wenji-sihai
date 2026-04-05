@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
             senderName: data.senderName,
             studentId: data.studentId,
             phone: data.phone,
+            senderAddress: data.senderAddress,
             college: data.college || null,
             grade: data.grade || null,
             recipientName: data.recipientName || null,
