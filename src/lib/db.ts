@@ -76,22 +76,11 @@ const getBootstrapDataCached = unstable_cache(
       },
     });
 
-    const letterTypes = await prisma.letterType.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        isActive: true,
-      },
-    });
-
-    return { schools, letterTypes };
+    return { schools };
   },
   ["bootstrap-data"],
   {
-    revalidate: 30,
+    revalidate: 60,
   },
 );
 
