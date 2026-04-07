@@ -12,7 +12,7 @@ async function main() {
   for (const school of SCHOOL_OPTIONS) {
     await prisma.school.upsert({
       where: { code: school.code },
-      update: { name: school.name, isActive: true },
+      update: { name: school.name },
       create: {
         code: school.code,
         name: school.name,
@@ -42,7 +42,7 @@ async function main() {
           name: boothName,
         },
       },
-      update: { isActive: true },
+      update: {},
       create: {
         schoolId: whu.id,
         name: boothName,

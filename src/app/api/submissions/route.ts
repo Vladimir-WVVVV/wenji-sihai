@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
           where: { id: data.schoolId },
         });
 
-        if (!school || !school.isActive) {
-          throw new Error("学校无效或已停用");
+        if (!school || !school.isActive || school.deletedAt) {
+          throw new Error("学校无效、已停用或已删除");
         }
 
         const booth = await tx.booth.findFirst({
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
             id: data.boothId,
             schoolId: school.id,
             isActive: true,
+            deletedAt: null,
           },
         });
 

@@ -159,7 +159,7 @@ export function SubmissionForm({ schools }: Props) {
               className="input"
               value={form.boothId}
               onChange={(event) => updateForm("boothId", event.target.value)}
-              disabled={!selectedSchool}
+              disabled={!selectedSchool || selectedSchool.booths.length === 0}
             >
               <option value="">请选择摊位</option>
               {selectedSchool?.booths.map((booth) => (
@@ -168,9 +168,17 @@ export function SubmissionForm({ schools }: Props) {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-slate-500">
-              摊位由后台维护，可按学校动态联动。
-            </p>
+            {selectedSchool ? (
+              selectedSchool.booths.length > 0 ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  摊位由后台维护，可按学校动态联动。
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">请通知该校管理员进行添加点位</p>
+              )
+            ) : (
+              <p className="mt-1 text-xs text-slate-500">请先选择学校，再选择可用摊位。</p>
+            )}
             {fieldErrors.boothId?.[0] ? (
               <p className="mt-1 text-xs text-rose-600">{fieldErrors.boothId[0]}</p>
             ) : null}

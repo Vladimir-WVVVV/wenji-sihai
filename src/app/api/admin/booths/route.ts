@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { getBoothsForAdmin } from "@/lib/db";
@@ -41,6 +42,10 @@ export async function POST(request: NextRequest) {
     return fail("学校不存在", 404);
   }
 
+  if (!school.isActive || school.deletedAt) {
+    return fail("学校已停用或已删除，无法新增摊位", 400);
+  }
+
   const booth = await prisma.booth.create({
     data: {
       schoolId: school.id,
@@ -52,5 +57,6 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  revalidateTag("bootstrap-data", "max");
   return ok(booth, "摊位创建成功");
 }

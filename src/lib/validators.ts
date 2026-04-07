@@ -73,3 +73,13 @@ export const boothUpdateSchema = z.object({
   name: z.string().min(2).max(50).optional(),
   isActive: z.boolean().optional(),
 });
+
+export const schoolSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(2, "请填写学校代码")
+    .max(20, "学校代码过长")
+    .regex(/^[A-Z0-9_]+$/, "学校代码仅支持大写字母、数字和下划线"),
+  name: z.string().trim().min(2, "请填写学校名称").max(50, "学校名称过长"),
+});

@@ -35,38 +35,48 @@ export default async function AdminRecordsPage({ searchParams }: Props) {
   const createdTo = typeof params.createdTo === "string" ? params.createdTo : undefined;
   const sort = params.sort === "asc" ? "asc" : "desc";
 
-  const [records, schools, booths] = await Promise.all([
-    getAdminRecords(session, {
-      schoolCode,
-      boothId,
-      letterTypeCode,
-      status,
-      senderName,
-      studentId,
-      displayCode,
-      createdFrom: createdFrom ? new Date(createdFrom) : undefined,
-      createdTo: createdTo ? new Date(`${createdTo}T23:59:59.999`) : undefined,
-      sort,
-    }),
-    prisma.school.findMany({
-      where: isSuperAdmin(session) ? undefined : { code: session.schoolCode || undefined },
-      orderBy: { id: "asc" },
-    }),
-    prisma.booth.findMany({
-      where: isSuperAdmin(session) ? undefined : { school: { code: session.schoolCode || undefined } },
-      orderBy: [{ schoolId: "asc" }, { id: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        school: {
-          select: {
-            code: true,
-            name: true,
+  const records = await getAdminRecords(session, {
+    schoolCode,
+    boothId,
+    letterTypeCode,
+    status,
+    senderName,
+    studentId,
+    displayCode,
+    createdFrom: createdFrom ? new Date(createdFrom) : undefined,
+    createdTo: createdTo ? new Date(`${createdTo}T23:59:59.999`) : undefined,
+    sort,
+  });
+  const schools = await prisma.school.findMany({
+    where: isSuperAdmin(session)
+      ? { isActive: true, deletedAt: null }
+      : { code: session.schoolCode || undefined, isActive: true, deletedAt: null },
+    orderBy: { id: "asc" },
+  });
+  const booths = await prisma.booth.findMany({
+    where: isSuperAdmin(session)
+      ? { isActive: true, deletedAt: null, school: { isActive: true, deletedAt: null } }
+      : {
+          isActive: true,
+          deletedAt: null,
+          school: {
+            code: session.schoolCode || undefined,
+            isActive: true,
+            deletedAt: null,
           },
         },
+    orderBy: [{ schoolId: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      school: {
+        select: {
+          code: true,
+          name: true,
+        },
       },
-    }),
-  ]);
+    },
+  });
 
   const initialRecords = records.map((record) => ({
     id: record.id,

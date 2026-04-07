@@ -1,5 +1,4 @@
 import { Prisma, SubmissionStatus } from "@prisma/client";
-import { unstable_cache } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -23,6 +22,10 @@ type RecordFilters = {
 };
 
 const ACTIVE_LETTER_TYPE_CODES = LETTER_TYPE_OPTIONS.map((item) => item.code);
+const ACTIVE_SCHOOL_WHERE = {
+  isActive: true,
+  deletedAt: null,
+} as const;
 
 function normalizeOptionalString(value: string | undefined, trim = false) {
   if (typeof value !== "string") {
@@ -57,37 +60,30 @@ function normalizeDate(value: Date | undefined) {
   return value;
 }
 
-const getBootstrapDataCached = unstable_cache(
-  async () => {
-    const schools = await prisma.school.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        booths: {
-          where: { isActive: true },
-          orderBy: { id: "asc" },
-          select: {
-            id: true,
-            name: true,
-            isActive: true,
-          },
+export async function getBootstrapData() {
+  const schools = await prisma.school.findMany({
+    where: ACTIVE_SCHOOL_WHERE,
+    orderBy: { id: "asc" },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      booths: {
+        where: {
+          isActive: true,
+          deletedAt: null,
+        },
+        orderBy: { id: "asc" },
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
         },
       },
-    });
+    },
+  });
 
-    return { schools };
-  },
-  ["bootstrap-data"],
-  {
-    revalidate: 60,
-  },
-);
-
-export async function getBootstrapData() {
-  return getBootstrapDataCached();
+  return { schools };
 }
 
 export async function getStudentQueryResults(input: {
@@ -252,7 +248,10 @@ export async function getBoothsForAdmin(session: AdminSession) {
 
   return prisma.booth.findMany({
     where: {
-      school: schoolCode ? { code: schoolCode } : undefined,
+      deletedAt: null,
+      school: schoolCode
+        ? { ...ACTIVE_SCHOOL_WHERE, code: schoolCode }
+        : ACTIVE_SCHOOL_WHERE,
     },
     include: {
       school: true,

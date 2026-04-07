@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import { SubmissionForm } from "@/components/student/SubmissionForm";
 
-const BOOTSTRAP_STORAGE_KEY = "wenji-apply-bootstrap";
 const BOOTSTRAP_TIMEOUT_MS = 6000;
 
 type Booth = {
@@ -50,7 +49,7 @@ export function ApplyFormShell() {
 
     try {
       const response = await fetch("/api/bootstrap", {
-        cache: "force-cache",
+        cache: "no-store",
         signal: controller.signal,
       });
       const result = (await response.json()) as BootstrapResponse;
@@ -60,7 +59,6 @@ export function ApplyFormShell() {
       }
 
       setSchools(result.data.schools);
-      window.sessionStorage.setItem(BOOTSTRAP_STORAGE_KEY, JSON.stringify(result.data.schools));
     } catch (error) {
       const fallbackMessage =
         error instanceof Error && error.name === "AbortError"
@@ -69,9 +67,7 @@ export function ApplyFormShell() {
             ? error.message
             : "当前暂时无法加载学校与摊位数据";
 
-      if (!options?.silent) {
-        setMessage(fallbackMessage);
-      }
+      setMessage(fallbackMessage);
     } finally {
       window.clearTimeout(timeoutId);
       if (!options?.silent) {
@@ -81,20 +77,7 @@ export function ApplyFormShell() {
   }, []);
 
   useEffect(() => {
-    try {
-      const cached = window.sessionStorage.getItem(BOOTSTRAP_STORAGE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached) as School[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSchools(parsed);
-          setLoading(false);
-        }
-      }
-    } catch {
-      window.sessionStorage.removeItem(BOOTSTRAP_STORAGE_KEY);
-    }
-
-    void loadBootstrap({ silent: Boolean(window.sessionStorage.getItem(BOOTSTRAP_STORAGE_KEY)) });
+    void loadBootstrap();
   }, [loadBootstrap]);
 
   if (loading) {
@@ -137,6 +120,22 @@ export function ApplyFormShell() {
           <button type="button" className="primary-button" onClick={() => void loadBootstrap()}>
             重新加载
           </button>
+          <Link href="/" className="secondary-button">
+            返回首页
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (schools.length === 0) {
+    return (
+      <div className="card max-w-2xl p-6">
+        <h2 className="text-xl font-semibold text-slate-950">填写活动信息</h2>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          当前暂无可用学校，请联系活动管理员完成学校与摊位配置后再填写。
+        </p>
+        <div className="mt-5">
           <Link href="/" className="secondary-button">
             返回首页
           </Link>

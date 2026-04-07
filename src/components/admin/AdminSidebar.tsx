@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { type AdminSession } from "@/lib/permissions";
+import { isSuperAdmin, type AdminSession } from "@/lib/permissions";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +14,17 @@ const NAV_ITEMS = [
   { href: "/admin", label: "后台首页" },
   { href: "/admin/records", label: "记录列表" },
   { href: "/admin/booths", label: "摊位管理" },
-] as const;
+];
+const SCHOOL_NAV_ITEM = {
+  href: "/admin/schools",
+  label: "学校管理",
+};
 
 export function AdminSidebar({ session }: Props) {
   const currentPath = usePathname();
+  const navItems = isSuperAdmin(session)
+    ? [...NAV_ITEMS, SCHOOL_NAV_ITEM]
+    : NAV_ITEMS;
 
   return (
     <aside className="card flex w-full flex-col gap-4 p-5 lg:w-64">
@@ -33,8 +39,8 @@ export function AdminSidebar({ session }: Props) {
       </div>
 
       <nav className="flex flex-col gap-2">
-        {NAV_ITEMS.map((item) => (
-          <Link
+        {navItems.map((item) => (
+          <a
             key={item.href}
             href={item.href}
             className={cn(
@@ -46,7 +52,7 @@ export function AdminSidebar({ session }: Props) {
             )}
           >
             {item.label}
-          </Link>
+          </a>
         ))}
       </nav>
 

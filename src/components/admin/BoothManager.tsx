@@ -6,6 +6,7 @@ type BoothRow = {
   id: number;
   name: string;
   isActive: boolean;
+  deletedAt: Date | string | null;
   school: {
     code: string;
     name: string;
@@ -87,6 +88,40 @@ export function BoothManager({
     );
   }
 
+  async function deleteBooth(booth: BoothRow) {
+    const confirmed = window.confirm(
+      "确认删除该摊位吗？若已有关联历史记录，系统会自动归档并从问卷和筛选项中移除。",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage("");
+    const response = await fetch(`/api/admin/booths/${booth.id}`, {
+      method: "DELETE",
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(result.message || "删除失败");
+      return;
+    }
+
+    setMessage(result.message || "删除成功");
+    setEditingId(null);
+    setEditingName("");
+
+    if (result.data?.mode === "deleted") {
+      setBoothRows((current) => current.filter((item) => item.id !== booth.id));
+      return;
+    }
+
+    if (result.data?.booth) {
+      setBoothRows((current) =>
+        current.map((item) => (item.id === booth.id ? result.data.booth : item)),
+      );
+    }
+  }
+
   return (
     <div className="space-y-6">
       <form onSubmit={createBooth} className="card space-y-4 p-5">
@@ -160,7 +195,7 @@ export function BoothManager({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {booth.isActive ? "启用中" : "已停用"}
+                    {booth.deletedAt ? "已删除归档" : booth.isActive ? "启用中" : "已停用"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
@@ -172,7 +207,7 @@ export function BoothManager({
                         >
                           保存名称
                         </button>
-                      ) : (
+                      ) : !booth.deletedAt ? (
                         <button
                           type="button"
                           className="secondary-button"
@@ -183,15 +218,24 @@ export function BoothManager({
                         >
                           编辑名称
                         </button>
-                      )}
+                      ) : null}
+                      {!booth.deletedAt ? (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() =>
+                            updateBooth(booth.id, { isActive: !booth.isActive })
+                          }
+                        >
+                          {booth.isActive ? "停用" : "启用"}
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         className="secondary-button"
-                        onClick={() =>
-                          updateBooth(booth.id, { isActive: !booth.isActive })
-                        }
+                        onClick={() => deleteBooth(booth)}
                       >
-                        {booth.isActive ? "停用" : "启用"}
+                        删除摊位
                       </button>
                     </div>
                   </td>
