@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { LETTER_TYPE_OPTIONS, SCHOOL_OPTIONS, SUBMISSION_STATUS_OPTIONS } from "@/config/constants";
+import { LETTER_TYPE_OPTIONS, SUBMISSION_STATUS_OPTIONS } from "@/config/constants";
 
 type SchoolRow = {
   code: string;
@@ -38,10 +39,6 @@ type Props = {
   initialFilters: FilterState;
 };
 
-function supportsReply(schoolCode: string) {
-  return SCHOOL_OPTIONS.find((item) => item.code === schoolCode)?.supportsReply ?? true;
-}
-
 export function AdminRecordsFilters({
   schools,
   booths,
@@ -54,16 +51,14 @@ export function AdminRecordsFilters({
       ? booths.filter((item) => item.school.code === initialFilters.schoolCode)
       : [];
     const boothExists = visibleBooths.some((item) => String(item.id) === initialFilters.boothId);
-    const canUseReply =
-      !initialFilters.schoolCode || supportsReply(initialFilters.schoolCode);
+    const letterTypeExists = LETTER_TYPE_OPTIONS.some(
+      (item) => item.code === initialFilters.letterTypeCode,
+    );
 
     return {
       ...initialFilters,
       boothId: boothExists ? initialFilters.boothId : "",
-      letterTypeCode:
-        initialFilters.letterTypeCode === "HX" && !canUseReply
-          ? ""
-          : initialFilters.letterTypeCode,
+      letterTypeCode: letterTypeExists ? initialFilters.letterTypeCode : "",
     };
   });
 
@@ -72,12 +67,7 @@ export function AdminRecordsFilters({
     return booths.filter((item) => item.school.code === filters.schoolCode);
   }, [booths, filters.schoolCode]);
 
-  const availableLetterTypes = useMemo(() => {
-    if (!filters.schoolCode) return LETTER_TYPE_OPTIONS;
-    return supportsReply(filters.schoolCode)
-      ? LETTER_TYPE_OPTIONS
-      : LETTER_TYPE_OPTIONS.filter((item) => item.code !== "HX");
-  }, [filters.schoolCode]);
+  const availableLetterTypes = useMemo(() => LETTER_TYPE_OPTIONS, []);
 
   const boothDisabled = isSuperAdmin ? !filters.schoolCode || availableBooths.length === 0 : availableBooths.length === 0;
   const noBoothsForSchool = Boolean(filters.schoolCode) && availableBooths.length === 0;
@@ -272,9 +262,9 @@ export function AdminRecordsFilters({
         <button className="primary-button" type="submit">
           应用筛选
         </button>
-        <a href="/admin/records" className="secondary-button">
+        <Link href="/admin/records" className="secondary-button">
           重置
-        </a>
+        </Link>
         <a href={exportHref} className="secondary-button">
           导出 CSV
         </a>

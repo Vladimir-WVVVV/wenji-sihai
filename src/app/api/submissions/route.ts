@@ -49,10 +49,6 @@ export async function POST(request: NextRequest) {
           throw new Error("信件类型无效");
         }
 
-        if (school.code !== "WHU" && letterType.code === "HX") {
-          throw new Error("仅武汉大学支持中小学生回信");
-        }
-
         const codes = await generateSubmissionCodes(tx, school.id, letterType.id);
 
         const submission = await tx.submission.create({

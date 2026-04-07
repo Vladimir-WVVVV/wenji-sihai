@@ -56,7 +56,7 @@ async function main() {
 
   for (const school of schools) {
     for (const letterType of letterTypes) {
-      if (school.code !== "WHU" && letterType.code === "HX") {
+      if (!LETTER_TYPE_OPTIONS.some((item) => item.code === letterType.code)) {
         continue;
       }
 

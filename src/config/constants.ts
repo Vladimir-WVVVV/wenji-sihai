@@ -1,16 +1,15 @@
 export const SCHOOL_OPTIONS = [
-  { code: "WHU", name: "武汉大学", supportsReply: true },
-  { code: "SJTU", name: "上海交通大学", supportsReply: false },
-  { code: "XMU", name: "厦门大学", supportsReply: false },
-  { code: "JLU", name: "吉林大学", supportsReply: false },
-  { code: "TJU", name: "天津大学", supportsReply: false },
-  { code: "SEU", name: "东南大学", supportsReply: false },
+  { code: "WHU", name: "武汉大学" },
+  { code: "SJTU", name: "上海交通大学" },
+  { code: "XMU", name: "厦门大学" },
+  { code: "JLU", name: "吉林大学" },
+  { code: "TJU", name: "天津大学" },
+  { code: "SEU", name: "东南大学" },
 ] as const;
 
 export const LETTER_TYPE_OPTIONS = [
   { code: "DX", name: "定向寄信" },
   { code: "BDX", name: "不定向寄信" },
-  { code: "HX", name: "中小学生回信" },
 ] as const;
 
 export const SUBMISSION_STATUS_OPTIONS = [

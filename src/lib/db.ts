@@ -7,7 +7,7 @@ import {
   normalizeSchoolFilter,
   type AdminSession,
 } from "@/lib/permissions";
-import { STATUS_CODE_TO_NAME } from "@/config/constants";
+import { LETTER_TYPE_OPTIONS, STATUS_CODE_TO_NAME } from "@/config/constants";
 
 type RecordFilters = {
   schoolCode?: string;
@@ -21,6 +21,8 @@ type RecordFilters = {
   createdTo?: Date;
   sort?: "asc" | "desc";
 };
+
+const ACTIVE_LETTER_TYPE_CODES = LETTER_TYPE_OPTIONS.map((item) => item.code);
 
 function normalizeOptionalString(value: string | undefined, trim = false) {
   if (typeof value !== "string") {
@@ -95,7 +97,9 @@ export async function getStudentQueryResults(input: {
   senderName?: string;
   phoneSuffix?: string;
 }) {
-  const where: Prisma.SubmissionWhereInput = {};
+  const where: Prisma.SubmissionWhereInput = {
+    letterType: { code: { in: ACTIVE_LETTER_TYPE_CODES } },
+  };
 
   if (input.mode === "phone") {
     where.phone = input.phone;
@@ -128,26 +132,26 @@ export async function getAdminDashboardStats(session: AdminSession) {
     : null;
 
   const schoolWhere = school ? { schoolId: school.id } : {};
+  const activeTypeWhere: Prisma.SubmissionWhereInput = {
+    letterType: { code: { in: ACTIVE_LETTER_TYPE_CODES } },
+  };
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
   // Session pooler runs with a tight connection limit in local development,
   // so dashboard counts should avoid parallel queries that can exhaust the pool.
-  const total = await prisma.submission.count({ where: schoolWhere });
+  const total = await prisma.submission.count({ where: { ...schoolWhere, ...activeTypeWhere } });
   const directed = await prisma.submission.count({
     where: { ...schoolWhere, letterType: { code: "DX" } },
   });
   const random = await prisma.submission.count({
     where: { ...schoolWhere, letterType: { code: "BDX" } },
   });
-  const reply = await prisma.submission.count({
-    where: { ...schoolWhere, letterType: { code: "HX" } },
-  });
   const today = await prisma.submission.count({
-    where: { ...schoolWhere, createdAt: { gte: todayStart } },
+    where: { ...schoolWhere, ...activeTypeWhere, createdAt: { gte: todayStart } },
   });
 
-  return { total, directed, random, reply, today, school };
+  return { total, directed, random, today, school };
 }
 
 export async function getAdminRecords(session: AdminSession, filters: RecordFilters) {
@@ -156,7 +160,11 @@ export async function getAdminRecords(session: AdminSession, filters: RecordFilt
     normalizeOptionalString(filters.schoolCode),
   );
   const normalizedBoothId = normalizeBoothId(filters.boothId);
-  const normalizedLetterTypeCode = normalizeOptionalString(filters.letterTypeCode);
+  const normalizedLetterTypeCode = ACTIVE_LETTER_TYPE_CODES.includes(
+    normalizeOptionalString(filters.letterTypeCode) as (typeof ACTIVE_LETTER_TYPE_CODES)[number],
+  )
+    ? normalizeOptionalString(filters.letterTypeCode)
+    : undefined;
   const normalizedStatus = normalizeStatus(filters.status);
   const normalizedSenderName = normalizeOptionalString(filters.senderName, true);
   const normalizedStudentId = normalizeOptionalString(filters.studentId, true);
@@ -164,7 +172,9 @@ export async function getAdminRecords(session: AdminSession, filters: RecordFilt
   const normalizedCreatedFrom = normalizeDate(filters.createdFrom);
   const normalizedCreatedTo = normalizeDate(filters.createdTo);
 
-  const where: Prisma.SubmissionWhereInput = {};
+  const where: Prisma.SubmissionWhereInput = {
+    letterType: { code: { in: ACTIVE_LETTER_TYPE_CODES } },
+  };
 
   if (normalizedSchoolCode) {
     where.school = { code: normalizedSchoolCode };
@@ -227,6 +237,10 @@ export async function getAdminRecordById(session: AdminSession, id: number) {
   }
 
   if (!canAccessSchool(session, record.school.code)) {
+    return null;
+  }
+
+  if (!ACTIVE_LETTER_TYPE_CODES.includes(record.letterType.code as (typeof ACTIVE_LETTER_TYPE_CODES)[number])) {
     return null;
   }
 

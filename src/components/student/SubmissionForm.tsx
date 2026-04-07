@@ -33,11 +33,10 @@ type FormState = {
   senderAddress: string;
   college: string;
   grade: string;
-  letterTypeCode: "DX" | "BDX" | "HX";
+  letterTypeCode: "DX" | "BDX";
   recipientName: string;
   recipientPhone: string;
   recipientAddress: string;
-  recipientSchoolGrade: string;
   recipientRemark: string;
   freeLetterTopic: string;
 };
@@ -55,7 +54,6 @@ const initialState: FormState = {
   recipientName: "",
   recipientPhone: "",
   recipientAddress: "",
-  recipientSchoolGrade: "",
   recipientRemark: "",
   freeLetterTopic: "",
 };
@@ -74,14 +72,9 @@ export function SubmissionForm({ schools }: Props) {
     [schools, form.schoolId],
   );
 
-  const availableLetterTypes = useMemo(() => {
-    if (selectedSchool?.code === "WHU") {
-      return ["DX", "BDX", "HX"] as const;
-    }
-    return ["DX", "BDX"] as const;
-  }, [selectedSchool]);
+  const availableLetterTypes = useMemo(() => ["DX", "BDX"] as const, []);
 
-  const showRecipientFields = form.letterTypeCode === "DX" || form.letterTypeCode === "HX";
+  const showRecipientFields = form.letterTypeCode === "DX";
 
   function updateForm<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -142,12 +135,10 @@ export function SubmissionForm({ schools }: Props) {
               value={form.schoolId}
               onChange={(event) => {
                 const schoolId = event.target.value;
-                const school = schools.find((item) => String(item.id) === schoolId);
                 setForm((current) => ({
                   ...current,
                   schoolId,
                   boothId: "",
-                  letterTypeCode: school?.code === "WHU" ? current.letterTypeCode : current.letterTypeCode === "HX" ? "DX" : current.letterTypeCode,
                 }));
               }}
             >
@@ -250,9 +241,7 @@ export function SubmissionForm({ schools }: Props) {
                 <div className="mt-1 text-xs opacity-80">
                   {code === "DX"
                     ? "填写完整收信人信息，定向投递。"
-                    : code === "BDX"
-                      ? "不填写收信人信息，随机匹配。"
-                      : "仅武汉大学可选，面向中小学生回信。"}
+                    : "不填写收信人信息，随机匹配。"}
                 </div>
               </div>
             </label>
@@ -278,13 +267,7 @@ export function SubmissionForm({ schools }: Props) {
               <label className="label">收信地址</label>
               <textarea className="input min-h-24" value={form.recipientAddress} onChange={(e) => updateForm("recipientAddress", e.target.value)} />
             </div>
-            {form.letterTypeCode === "HX" ? (
-              <div>
-                <label className="label">学校 / 年级</label>
-                <input className="input" value={form.recipientSchoolGrade} onChange={(e) => updateForm("recipientSchoolGrade", e.target.value)} />
-              </div>
-            ) : null}
-            <div className={form.letterTypeCode === "HX" ? "" : "md:col-span-2"}>
+            <div className="md:col-span-2">
               <label className="label">备注</label>
               <input className="input" value={form.recipientRemark} onChange={(e) => updateForm("recipientRemark", e.target.value)} />
             </div>

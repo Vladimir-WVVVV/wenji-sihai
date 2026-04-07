@@ -68,7 +68,6 @@ export default async function AdminRecordDetailPage({ params }: Props) {
               <div>收信人姓名：{record.recipientName || "未填写"}</div>
               <div>收信人联系方式：{record.recipientPhone || "未填写"}</div>
               <div className="sm:col-span-2">收信地址：{record.recipientAddress || "未填写"}</div>
-              <div>学校 / 年级：{record.recipientSchoolGrade || "未填写"}</div>
               <div>备注：{record.recipientRemark || "未填写"}</div>
               <div className="sm:col-span-2">
                 主题 / 关键词：{record.freeLetterTopic || "未填写"}

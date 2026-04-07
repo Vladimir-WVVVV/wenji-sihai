@@ -8,7 +8,7 @@ export const submissionSchema = z
   .object({
     schoolId: z.coerce.number().int().positive("请选择学校"),
     boothId: z.coerce.number().int().positive("请选择摊位"),
-    letterTypeCode: z.enum(["DX", "BDX", "HX"]),
+    letterTypeCode: z.enum(["DX", "BDX"]),
     senderName: z.string().min(2, "请填写寄件人姓名").max(30),
     studentId: z.string().min(3, "请填写学号").max(50),
     phone: phoneSchema,
@@ -23,7 +23,7 @@ export const submissionSchema = z
     freeLetterTopic: z.string().max(200).optional().or(z.literal("")),
   })
   .superRefine((value, ctx) => {
-    if (value.letterTypeCode === "DX" || value.letterTypeCode === "HX") {
+    if (value.letterTypeCode === "DX") {
       if (!value.recipientName) {
         ctx.addIssue({ code: "custom", path: ["recipientName"], message: "请填写收信人姓名" });
       }

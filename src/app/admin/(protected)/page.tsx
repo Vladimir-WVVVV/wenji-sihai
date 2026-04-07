@@ -18,12 +18,11 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["本校总提交数", stats.total],
           ["本校定向寄信数", stats.directed],
           ["本校不定向寄信数", stats.random],
-          ["本校中小学生回信数", stats.reply],
           ["今日新增数量", stats.today],
         ].map(([label, value]) => (
           <div key={String(label)} className="card p-5">
