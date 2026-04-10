@@ -13,6 +13,7 @@ type Props = {
 const NAV_ITEMS = [
   { href: "/admin", label: "后台首页" },
   { href: "/admin/records", label: "记录列表" },
+  { href: "/admin/campuses", label: "校区管理" },
   { href: "/admin/booths", label: "摊位管理" },
 ];
 const SCHOOL_NAV_ITEM = {

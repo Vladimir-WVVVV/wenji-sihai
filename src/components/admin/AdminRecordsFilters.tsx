@@ -19,9 +19,17 @@ type BoothRow = {
   };
 };
 
+type CampusFilterRow = {
+  id: number;
+  label: string;
+  schoolCode: string;
+};
+
 type FilterState = {
   schoolCode: string;
   boothId: string;
+  activityCampusId: string;
+  recipientCampusId: string;
   letterTypeCode: string;
   status: string;
   senderName: string;
@@ -35,6 +43,8 @@ type FilterState = {
 type Props = {
   schools: SchoolRow[];
   booths: BoothRow[];
+  activityCampuses: CampusFilterRow[];
+  recipientCampuses: CampusFilterRow[];
   isSuperAdmin: boolean;
   initialFilters: FilterState;
 };
@@ -42,6 +52,8 @@ type Props = {
 export function AdminRecordsFilters({
   schools,
   booths,
+  activityCampuses,
+  recipientCampuses,
   isSuperAdmin,
   initialFilters,
 }: Props) {
@@ -54,11 +66,19 @@ export function AdminRecordsFilters({
     const letterTypeExists = LETTER_TYPE_OPTIONS.some(
       (item) => item.code === initialFilters.letterTypeCode,
     );
+    const activityExists = activityCampuses.some(
+      (item) => String(item.id) === initialFilters.activityCampusId,
+    );
+    const recipientExists = recipientCampuses.some(
+      (item) => String(item.id) === initialFilters.recipientCampusId,
+    );
 
     return {
       ...initialFilters,
       boothId: boothExists ? initialFilters.boothId : "",
       letterTypeCode: letterTypeExists ? initialFilters.letterTypeCode : "",
+      activityCampusId: activityExists ? initialFilters.activityCampusId : "",
+      recipientCampusId: recipientExists ? initialFilters.recipientCampusId : "",
     };
   });
 
@@ -66,6 +86,11 @@ export function AdminRecordsFilters({
     if (!filters.schoolCode) return [];
     return booths.filter((item) => item.school.code === filters.schoolCode);
   }, [booths, filters.schoolCode]);
+
+  const availableActivityCampuses = useMemo(() => {
+    if (!filters.schoolCode) return activityCampuses;
+    return activityCampuses.filter((item) => item.schoolCode === filters.schoolCode);
+  }, [activityCampuses, filters.schoolCode]);
 
   const availableLetterTypes = useMemo(() => LETTER_TYPE_OPTIONS, []);
 
@@ -78,6 +103,8 @@ export function AdminRecordsFilters({
 
     if (filters.schoolCode) params.set("schoolCode", filters.schoolCode);
     if (filters.boothId) params.set("boothId", filters.boothId);
+    if (filters.activityCampusId) params.set("activityCampusId", filters.activityCampusId);
+    if (filters.recipientCampusId) params.set("recipientCampusId", filters.recipientCampusId);
     if (filters.letterTypeCode) params.set("letterTypeCode", filters.letterTypeCode);
     if (filters.status) params.set("status", filters.status);
     if (filters.senderName) params.set("senderName", filters.senderName);
@@ -93,7 +120,7 @@ export function AdminRecordsFilters({
   return (
     <form action="/admin/records" className="card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
       <div>
-        <label className="label">学校</label>
+        <label className="label">活动登记学校</label>
         <select
           name="schoolCode"
           className="input"
@@ -105,6 +132,7 @@ export function AdminRecordsFilters({
               schoolCode: nextSchoolCode,
               boothId: "",
               letterTypeCode: "",
+              activityCampusId: "",
             }));
           }}
         >
@@ -112,6 +140,44 @@ export function AdminRecordsFilters({
           {schools.map((item) => (
             <option key={item.code} value={item.code}>
               {item.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="label">活动校区</label>
+        <select
+          name="activityCampusId"
+          className="input"
+          value={filters.activityCampusId}
+          onChange={(event) =>
+            setFilters((current) => ({ ...current, activityCampusId: event.target.value }))
+          }
+        >
+          <option value="">全部活动校区</option>
+          {availableActivityCampuses.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="label">收信校区</label>
+        <select
+          name="recipientCampusId"
+          className="input"
+          value={filters.recipientCampusId}
+          onChange={(event) =>
+            setFilters((current) => ({ ...current, recipientCampusId: event.target.value }))
+          }
+        >
+          <option value="">全部收信校区</option>
+          {recipientCampuses.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
             </option>
           ))}
         </select>
@@ -138,7 +204,7 @@ export function AdminRecordsFilters({
           ))}
         </select>
         {noBoothsForSchool ? (
-          <p className="mt-2 text-xs text-slate-500">请通知该校管理员进行添加点位</p>
+          <p className="mt-2 text-xs text-slate-500">该校暂无启用中的摊位</p>
         ) : null}
       </div>
 

@@ -40,7 +40,25 @@ export default async function AdminRecordDetailPage({ params }: Props) {
           <section className="card p-6">
             <h2 className="text-lg font-semibold text-slate-950">基础信息</h2>
             <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-              <div>学校：{record.school.name}</div>
+              <div>活动登记学校：{record.school.name}</div>
+              <div>
+                活动校区（摆点）：
+                {record.activityCampus
+                  ? `${record.activityCampus.school.name}（${record.activityCampus.name}）`
+                  : "—（历史记录）"}
+              </div>
+              <div>
+                收信学校：
+                {record.letterType.code === "BDX"
+                  ? "—"
+                  : (record.recipientSchool?.name ?? "—")}
+              </div>
+              <div>
+                收信校区：
+                {record.letterType.code === "BDX"
+                  ? "—"
+                  : (record.recipientCampus?.name ?? "—（历史记录）")}
+              </div>
               <div>摊位：{record.booth.name}</div>
               <div>信件类型：{record.letterType.name}</div>
               <div>当前状态：{STATUS_CODE_TO_NAME[record.status]}</div>

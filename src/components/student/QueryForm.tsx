@@ -10,7 +10,13 @@ type QueryMode = "phone" | "studentId" | "namePhoneSuffix";
 type QueryResult = {
   id: number;
   displayCode: string;
+  rawCode?: string;
   schoolName: string;
+  activitySchoolName?: string;
+  activityCampusLabel: string;
+  recipientSchoolName?: string;
+  recipientCampusName?: string;
+  recipientCampusLabel: string;
   boothName: string;
   senderName: string;
   letterTypeName: string;
@@ -135,7 +141,15 @@ export function QueryForm() {
               </span>
             </div>
             <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-              <div>学校：{item.schoolName}</div>
+              {item.rawCode ? (
+                <div className="font-mono text-xs text-slate-500 sm:col-span-2">
+                  内部短码：{item.rawCode}
+                </div>
+              ) : null}
+              <div>活动学校：{item.activitySchoolName ?? item.schoolName}</div>
+              <div>活动校区：{item.activityCampusLabel}</div>
+              <div>收信学校：{item.recipientSchoolName ?? "—"}</div>
+              <div>收信校区：{item.recipientCampusName ?? "—"}</div>
               <div>摊位：{item.boothName}</div>
               <div>寄件人：{item.senderName}</div>
               <div>信件类型：{item.letterTypeName}</div>

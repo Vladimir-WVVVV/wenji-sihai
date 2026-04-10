@@ -13,23 +13,41 @@ type Booth = {
   isActive: boolean;
 };
 
-type School = {
+export type ActivityCampusOption = {
+  id: number;
+  schoolId: number;
+  schoolCode: string;
+  schoolName: string;
+  campusCode: string;
+  campusName: string;
+  displayLabel: string;
+  booths: Booth[];
+};
+
+export type RecipientSchoolOption = {
   id: number;
   code: string;
   name: string;
-  booths: Booth[];
+  campuses: Array<{
+    id: number;
+    code: string;
+    name: string;
+    hasBooth: boolean;
+  }>;
 };
 
 type BootstrapResponse = {
   success: boolean;
   message: string;
   data?: {
-    schools: School[];
+    activityCampuses: ActivityCampusOption[];
+    recipientSchools: RecipientSchoolOption[];
   };
 };
 
 export function ApplyFormShell() {
-  const [schools, setSchools] = useState<School[] | null>(null);
+  const [activityCampuses, setActivityCampuses] = useState<ActivityCampusOption[] | null>(null);
+  const [recipientSchools, setRecipientSchools] = useState<RecipientSchoolOption[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [timedOut, setTimedOut] = useState(false);
@@ -58,14 +76,15 @@ export function ApplyFormShell() {
         throw new Error(result.message || "加载失败");
       }
 
-      setSchools(result.data.schools);
+      setActivityCampuses(result.data.activityCampuses);
+      setRecipientSchools(result.data.recipientSchools);
     } catch (error) {
       const fallbackMessage =
         error instanceof Error && error.name === "AbortError"
-          ? "学校与摊位数据加载较慢，请点击重试。"
+          ? "活动数据加载较慢，请点击重试。"
           : error instanceof Error
             ? error.message
-            : "当前暂时无法加载学校与摊位数据";
+            : "当前暂时无法加载问卷数据";
 
       setMessage(fallbackMessage);
     } finally {
@@ -87,7 +106,7 @@ export function ApplyFormShell() {
           <div>
             <h2 className="text-xl font-semibold text-slate-950">正在准备填写表单</h2>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              页面已打开，正在加载学校与摊位数据。若当前网络较慢，请稍候片刻。
+              页面已打开，正在加载活动校区与摊位数据。若当前网络较慢，请稍候片刻。
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -104,16 +123,16 @@ export function ApplyFormShell() {
     );
   }
 
-  if (!schools) {
+  if (!activityCampuses || !recipientSchools) {
     return (
       <div className="card max-w-2xl p-6">
         <h2 className="text-xl font-semibold text-slate-950">填写活动信息</h2>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          {message || "当前暂时无法加载学校与摊位数据，请稍后重试。"}
+          {message || "当前暂时无法加载问卷数据，请稍后重试。"}
         </p>
         {timedOut ? (
           <p className="mt-2 text-xs leading-6 text-slate-500">
-            当前页面主体已可见，只有学校与摊位数据加载较慢；重新加载后通常可恢复。
+            当前页面主体已可见，只有数据加载较慢；重新加载后通常可恢复。
           </p>
         ) : null}
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -128,12 +147,12 @@ export function ApplyFormShell() {
     );
   }
 
-  if (schools.length === 0) {
+  if (activityCampuses.length === 0) {
     return (
       <div className="card max-w-2xl p-6">
         <h2 className="text-xl font-semibold text-slate-950">填写活动信息</h2>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          当前暂无可用学校，请联系活动管理员完成学校与摊位配置后再填写。
+          当前没有可用的摆点校区。请联系管理员配置「摆点校区」及摊位后再填写。
         </p>
         <div className="mt-5">
           <Link href="/" className="secondary-button">
@@ -144,5 +163,7 @@ export function ApplyFormShell() {
     );
   }
 
-  return <SubmissionForm schools={schools} />;
+  return (
+    <SubmissionForm activityCampuses={activityCampuses} recipientSchools={recipientSchools} />
+  );
 }

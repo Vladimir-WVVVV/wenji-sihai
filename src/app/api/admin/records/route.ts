@@ -17,6 +17,12 @@ export async function GET(request: NextRequest) {
     boothId: searchParams.get("boothId")
       ? Number(searchParams.get("boothId"))
       : undefined,
+    activityCampusId: searchParams.get("activityCampusId")
+      ? Number(searchParams.get("activityCampusId"))
+      : undefined,
+    recipientCampusId: searchParams.get("recipientCampusId")
+      ? Number(searchParams.get("recipientCampusId"))
+      : undefined,
     letterTypeCode: searchParams.get("letterTypeCode") || undefined,
     status: (searchParams.get("status") as SubmissionStatus | null) || undefined,
     senderName: searchParams.get("senderName") || undefined,

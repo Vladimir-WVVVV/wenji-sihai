@@ -1,0 +1,7 @@
+DATABASE_URL="postgresql://postgres.axzllbawvnqybdnoianl:Wenji2026!WHU%40Data@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
+DIRECT_URL="postgresql://postgres.axzllbawvnqybdnoianl:Wenji2026!WHU%40Data@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
+ADMIN_JWT_SECRET="Tsas6xA8j+RvRWp1j66UM0b9xGXuxid4NoZj8ybkxdCUn8Wm3fcRCeB1YxKQy3hNrIw0JVyhfEYeFJ7YPNdH8g=="
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_bi1kJo1XLmSB7zTyNb3doA_tg8giXmD"
+NEXT_PUBLIC_SUPABASE_URL="https://bjclmbrjbljcgheqsmxs.supabase.co"

@@ -4,10 +4,19 @@ const phoneSchema = z
   .string()
   .regex(/^1\d{10}$/, "请输入正确的手机号");
 
+/** 空串 / 缺省视为未填；仅定向寄信时由 superRefine 要求必填 */
+const optionalRecipientId = z.preprocess((val) => {
+  if (val === "" || val === undefined || val === null) return undefined;
+  const n = Number(val);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}, z.number().int().positive().optional());
+
 export const submissionSchema = z
   .object({
-    schoolId: z.coerce.number().int().positive("请选择学校"),
+    activityCampusId: z.coerce.number().int().positive("请选择参与活动的校区单位"),
     boothId: z.coerce.number().int().positive("请选择摊位"),
+    recipientSchoolId: optionalRecipientId,
+    recipientCampusId: optionalRecipientId,
     letterTypeCode: z.enum(["DX", "BDX"]),
     senderName: z.string().min(2, "请填写寄件人姓名").max(30),
     studentId: z.string().min(3, "请填写学号").max(50),
@@ -24,6 +33,20 @@ export const submissionSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.letterTypeCode === "DX") {
+      if (value.recipientSchoolId == null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["recipientSchoolId"],
+          message: "请选择收信学校",
+        });
+      }
+      if (value.recipientCampusId == null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["recipientCampusId"],
+          message: "请选择收信校区",
+        });
+      }
       if (!value.recipientName) {
         ctx.addIssue({ code: "custom", path: ["recipientName"], message: "请填写收信人姓名" });
       }
@@ -64,7 +87,7 @@ export const updateStatusSchema = z.object({
 });
 
 export const boothSchema = z.object({
-  schoolCode: z.string().min(2),
+  campusId: z.coerce.number().int().positive("请选择所属校区"),
   name: z.string().min(2, "请填写摊位名称").max(50),
   isActive: z.boolean().optional(),
 });
@@ -72,6 +95,8 @@ export const boothSchema = z.object({
 export const boothUpdateSchema = z.object({
   name: z.string().min(2).max(50).optional(),
   isActive: z.boolean().optional(),
+  /// 补全历史摊位所属校区；写入后会同步 schoolId
+  campusId: z.coerce.number().int().positive().optional(),
 });
 
 export const schoolSchema = z.object({
@@ -82,4 +107,24 @@ export const schoolSchema = z.object({
     .max(20, "学校代码过长")
     .regex(/^[A-Z0-9_]+$/, "学校代码仅支持大写字母、数字和下划线"),
   name: z.string().trim().min(2, "请填写学校名称").max(50, "学校名称过长"),
+});
+
+export const campusCreateSchema = z.object({
+  schoolCode: z.string().min(2),
+  code: z
+    .string()
+    .trim()
+    .min(2, "请填写校区代码")
+    .max(20, "校区代码过长")
+    .regex(/^[A-Z0-9_]+$/, "校区代码仅支持大写字母、数字和下划线"),
+  name: z.string().trim().min(2, "请填写校区名称").max(50),
+  hasBooth: z.boolean(),
+  sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
+});
+
+export const campusUpdateSchema = z.object({
+  name: z.string().trim().min(2).max(50).optional(),
+  hasBooth: z.boolean().optional(),
+  sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
+  isEnabled: z.boolean().optional(),
 });

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
+import { countSubmissionsInvolvingSchool } from "@/lib/db";
 import { requireAdminApiSession } from "@/lib/auth";
 import { fail, ok } from "@/lib/response";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     return fail("仅超级管理员可管理学校", 403);
   }
 
-  const schools = await prisma.school.findMany({
+  const schoolRows = await prisma.school.findMany({
     orderBy: { id: "asc" },
     select: {
       id: true,
@@ -28,13 +29,21 @@ export async function GET(request: NextRequest) {
       deletedAt: true,
       _count: {
         select: {
-          booths: true,
-          submissions: true,
-          counterScopes: true,
+          campuses: true,
         },
       },
     },
   });
+
+  const schools = await Promise.all(
+    schoolRows.map(async (s) => ({
+      ...s,
+      _count: {
+        campuses: s._count.campuses,
+        submissions: await countSubmissionsInvolvingSchool(s.id),
+      },
+    })),
+  );
 
   return ok(schools);
 }
@@ -87,6 +96,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const mainCampus = await tx.campus.create({
+      data: {
+        schoolId: created.id,
+        code: "MAIN",
+        name: "主校区",
+        hasBooth: true,
+        sortOrder: 0,
+        isEnabled: true,
+      },
+    });
+
     const letterTypes = await tx.letterType.findMany({
       where: {
         isActive: true,
@@ -102,7 +122,7 @@ export async function POST(request: NextRequest) {
     for (const letterType of letterTypes) {
       await tx.counterScope.create({
         data: {
-          schoolId: created.id,
+          campusId: mainCampus.id,
           letterTypeId: letterType.id,
           currentValue: 0,
         },
@@ -117,9 +137,8 @@ export async function POST(request: NextRequest) {
     {
       ...school,
       _count: {
-        booths: 0,
+        campuses: 1,
         submissions: 0,
-        counterScopes: LETTER_TYPE_OPTIONS.length,
       },
     },
     "学校创建成功",

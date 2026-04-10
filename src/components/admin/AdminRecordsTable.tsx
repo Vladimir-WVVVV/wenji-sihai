@@ -8,7 +8,11 @@ import { AdminDeleteSubmissionButton } from "@/components/admin/AdminDeleteSubmi
 type RecordRow = {
   id: number;
   displayCode: string;
-  schoolName: string;
+  rawCode: string;
+  activitySchoolName: string;
+  activityCampusLabel: string;
+  recipientSchoolName: string;
+  recipientCampusName: string;
   boothName: string;
   senderName: string;
   studentId: string;
@@ -35,8 +39,12 @@ export function AdminRecordsTable({ initialRecords }: Props) {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-slate-600">
             <tr>
-              <th className="px-4 py-3">编号</th>
-              <th className="px-4 py-3">学校</th>
+              <th className="px-4 py-3">展示编号</th>
+              <th className="px-4 py-3">内部短码</th>
+              <th className="px-4 py-3">活动学校</th>
+              <th className="px-4 py-3">活动校区</th>
+              <th className="px-4 py-3">收信学校</th>
+              <th className="px-4 py-3">收信校区</th>
               <th className="px-4 py-3">摊位</th>
               <th className="px-4 py-3">寄件人姓名</th>
               <th className="px-4 py-3">学号</th>
@@ -51,7 +59,11 @@ export function AdminRecordsTable({ initialRecords }: Props) {
             {records.map((record) => (
               <tr key={record.id} className="border-t border-slate-100">
                 <td className="px-4 py-3">{record.displayCode}</td>
-                <td className="px-4 py-3">{record.schoolName}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-600">{record.rawCode}</td>
+                <td className="px-4 py-3">{record.activitySchoolName}</td>
+                <td className="px-4 py-3">{record.activityCampusLabel}</td>
+                <td className="px-4 py-3">{record.recipientSchoolName}</td>
+                <td className="px-4 py-3">{record.recipientCampusName}</td>
                 <td className="px-4 py-3">{record.boothName}</td>
                 <td className="px-4 py-3">{record.senderName}</td>
                 <td className="px-4 py-3">{record.studentId}</td>
@@ -74,7 +86,7 @@ export function AdminRecordsTable({ initialRecords }: Props) {
             ))}
             {records.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-slate-500" colSpan={10}>
+                <td className="px-4 py-8 text-center text-slate-500" colSpan={14}>
                   当前筛选条件下暂无记录。
                 </td>
               </tr>

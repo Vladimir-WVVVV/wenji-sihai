@@ -62,6 +62,14 @@ export const ADMIN_ACCOUNTS: AdminAccount[] = [
     enabled: true,
   },
   {
+    username: "admin_xjtu",
+    password: "Wenji2026XJTU",
+    role: ADMIN_ROLES.SCHOOL_ADMIN,
+    schoolCode: "XJTU",
+    schoolName: "西安交通大学",
+    enabled: true,
+  },
+  {
     username: "admin_super",
     password: "Wenji2026SUPER",
     role: ADMIN_ROLES.SUPER_ADMIN,

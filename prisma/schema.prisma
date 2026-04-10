@@ -1,111 +1,344 @@
 generator client {
+
   provider = "prisma-client-js"
+
 }
+
+
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+
+  provider  = "postgresql"
+
+  url       = env("DATABASE_URL")
+
   directUrl = env("DIRECT_URL")
+
 }
+
+
 
 enum SubmissionStatus {
+
   SUBMITTED
+
   RECEIVED
+
   VERIFIED
+
   SORTED
+
   SENT
+
   COMPLETED
+
 }
+
+
 
 model School {
-  id            Int            @id @default(autoincrement())
-  code          String         @unique
-  name          String         @unique
-  isActive      Boolean        @default(true) @map("is_active")
-  deletedAt     DateTime?      @map("deleted_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  id        Int       @id @default(autoincrement())
+
+  code      String    @unique
+
+  name      String    @unique
+
+  isActive  Boolean   @default(true) @map("is_active")
+
+  deletedAt DateTime? @map("deleted_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+
+
+  campuses      Campus[]
+
   booths        Booth[]
+
   counterScopes CounterScope[]
-  submissions   Submission[]
+
+  /// 学生活动登记所在学校
+
+  activitySubmissions Submission[] @relation("SubmissionActivitySchool")
+
+  /// 收信去向学校（与 recipientCampus 所属学校一致，便于列表筛选与方案 B 权限）
+
+  recipientSubmissions Submission[] @relation("SubmissionRecipientSchool")
+
+
 
   @@map("schools")
+
 }
 
-model Booth {
-  id          Int          @id @default(autoincrement())
-  schoolId    Int          @map("school_id")
-  name        String
-  isActive    Boolean      @default(true) @map("is_active")
-  deletedAt   DateTime?    @map("deleted_at")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  submissions Submission[]
+
+
+/// 校区：摆点校区（hasBooth）参与现场登记与独立编号；非摆点校区仅作收信去向等。
+
+model Campus {
+
+  id        Int       @id @default(autoincrement())
+
+  schoolId  Int       @map("school_id")
+
+  /// 校内短码，用于 rawCode 等（如 MAIN、MED）
+
+  code      String
+
+  name      String
+
+  hasBooth  Boolean   @default(false) @map("has_booth")
+
+  sortOrder Int       @default(0) @map("sort_order")
+
+  /// 业务上称「是否启用」；列名沿用 is_active 以兼容已有库
+
+  isEnabled Boolean   @default(true) @map("is_active")
+
+  deletedAt DateTime? @map("deleted_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+
+
+  school               School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  booths               Booth[]
+
+  counterScopes        CounterScope[]
+
+  activitySubmissions  Submission[]   @relation("SubmissionActivityCampus")
+
+  recipientSubmissions Submission[]   @relation("SubmissionRecipientCampus")
+
+
+
+  @@unique([schoolId, code])
 
   @@unique([schoolId, name])
-  @@index([schoolId, isActive])
-  @@map("booths")
+
+  @@index([schoolId, hasBooth, isEnabled, deletedAt])
+
+  @@map("campuses")
+
 }
+
+
+
+/// 摊位：增量兼容。历史可仅有 schoolId；新建须挂 campusId（应用层校验），并建议写入 schoolId 便于列表展示。
+
+model Booth {
+
+  id        Int       @id @default(autoincrement())
+
+  schoolId  Int?      @map("school_id")
+
+  campusId  Int?      @map("campus_id")
+
+  name      String
+
+  isActive  Boolean   @default(true) @map("is_active")
+
+  deletedAt DateTime? @map("deleted_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+
+
+  school      School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  campus      Campus?      @relation(fields: [campusId], references: [id], onDelete: Cascade)
+
+  submissions Submission[]
+
+
+
+  @@unique([campusId, name])
+
+  @@unique([schoolId, name])
+
+  @@index([schoolId, isActive])
+
+  @@index([campusId, isActive])
+
+  @@map("booths")
+
+}
+
+
 
 model LetterType {
+
   id            Int            @id @default(autoincrement())
+
   code          String         @unique
+
   name          String         @unique
+
   isActive      Boolean        @default(true) @map("is_active")
+
   createdAt     DateTime       @default(now()) @map("created_at")
+
   updatedAt     DateTime       @updatedAt @map("updated_at")
+
   counterScopes CounterScope[]
+
   submissions   Submission[]
 
+
+
   @@map("letter_types")
+
 }
+
+
+
+/// 编号计数器双轨：历史可为「学校 + 信件类型」；新提交仅使用「摆点校区 + 信件类型」行（schoolId 为空）。
+
+/// 唯一性由数据库部分唯一索引保证（见迁移），Prisma 层不声明 @@unique，避免与可空字段冲突。
 
 model CounterScope {
-  id           Int        @id @default(autoincrement())
-  schoolId     Int        @map("school_id")
-  letterTypeId Int        @map("letter_type_id")
-  currentValue Int        @default(0) @map("current_value")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  letterType   LetterType @relation(fields: [letterTypeId], references: [id], onDelete: Cascade)
 
-  @@unique([schoolId, letterTypeId])
+  id           Int        @id @default(autoincrement())
+
+  schoolId     Int?       @map("school_id")
+
+  campusId     Int?       @map("campus_id")
+
+  letterTypeId Int        @map("letter_type_id")
+
+  currentValue Int        @default(0) @map("current_value")
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+
+
+  school     School?     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  campus     Campus?     @relation(fields: [campusId], references: [id], onDelete: Cascade)
+
+  letterType LetterType  @relation(fields: [letterTypeId], references: [id], onDelete: Cascade)
+
+
+
+  @@index([campusId, letterTypeId])
+
+  @@index([schoolId, letterTypeId])
+
   @@map("counter_scopes")
+
 }
+
+
 
 model Submission {
-  id                   Int              @id @default(autoincrement())
-  schoolId             Int              @map("school_id")
-  boothId              Int              @map("booth_id")
-  letterTypeId         Int              @map("letter_type_id")
-  senderName           String           @map("sender_name")
-  studentId            String           @map("student_id")
-  phone                String
-  senderAddress        String?          @map("sender_address")
-  college              String? 
-  grade                String?
-  recipientName        String?          @map("recipient_name")
-  recipientPhone       String?          @map("recipient_phone")
-  recipientAddress     String?          @map("recipient_address")
-  recipientSchoolGrade String?          @map("recipient_school_grade")
-  recipientRemark      String?          @map("recipient_remark")
-  freeLetterTopic      String?          @map("free_letter_topic")
-  displayCode          String           @unique @map("display_code")
-  rawCode              String           @unique @map("raw_code")
-  status               SubmissionStatus @default(SUBMITTED)
-  createdAt            DateTime         @default(now()) @map("created_at")
-  updatedAt            DateTime         @updatedAt @map("updated_at")
-  school               School           @relation(fields: [schoolId], references: [id])
-  booth                Booth            @relation(fields: [boothId], references: [id])
-  letterType           LetterType       @relation(fields: [letterTypeId], references: [id])
+
+  id                Int              @id @default(autoincrement())
+
+  /// 活动登记学校（与 activityCampus 所属学校一致）
+
+  schoolId          Int              @map("school_id")
+
+  /// 活动/摆点校区；旧数据可能为空
+
+  activityCampusId  Int?             @map("activity_campus_id")
+
+  /// 收信学校；与 recipientCampus 逻辑一致，旧数据可能为空（权限仅认本字段 + 活动学校，不认「仅靠收信校区推断」）
+
+  recipientSchoolId Int?             @map("recipient_school_id")
+
+  /// 收信校区（含无摆点校区）
+
+  recipientCampusId Int?             @map("recipient_campus_id")
+
+  boothId           Int              @map("booth_id")
+
+  letterTypeId      Int              @map("letter_type_id")
+
+  senderName        String           @map("sender_name")
+
+  studentId         String           @map("student_id")
+
+  phone             String
+
+  senderAddress     String?          @map("sender_address")
+
+  college           String?
+
+  grade             String?
+
+  recipientName     String?          @map("recipient_name")
+
+  recipientPhone    String?          @map("recipient_phone")
+
+  recipientAddress  String?          @map("recipient_address")
+
+  /// 字段名含 School 指收信人年级等文本，与 recipientSchoolId 无关
+
+  recipientSchoolGrade String?       @map("recipient_school_grade")
+
+  recipientRemark   String?          @map("recipient_remark")
+
+  freeLetterTopic   String?          @map("free_letter_topic")
+
+  /// 面向用户展示的编号
+
+  displayCode       String           @unique @map("display_code")
+
+  /// 系统内部唯一短码（与 displayCode 职责分离）
+
+  rawCode           String           @unique @map("raw_code")
+
+  status            SubmissionStatus @default(SUBMITTED)
+
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+
+
+  school           School     @relation("SubmissionActivitySchool", fields: [schoolId], references: [id])
+
+  activityCampus   Campus?    @relation("SubmissionActivityCampus", fields: [activityCampusId], references: [id])
+
+  recipientSchool  School?    @relation("SubmissionRecipientSchool", fields: [recipientSchoolId], references: [id])
+
+  recipientCampus  Campus?    @relation("SubmissionRecipientCampus", fields: [recipientCampusId], references: [id])
+
+  booth            Booth      @relation(fields: [boothId], references: [id])
+
+  letterType       LetterType @relation(fields: [letterTypeId], references: [id])
+
+
 
   @@index([schoolId, boothId])
+
   @@index([schoolId, letterTypeId, status])
+
+  @@index([activityCampusId])
+
+  @@index([recipientSchoolId])
+
+  @@index([recipientCampusId])
+
   @@index([studentId])
+
   @@index([phone])
+
   @@index([senderName])
+
   @@index([createdAt])
+
   @@map("submissions")
+
 }
+

@@ -9,9 +9,8 @@ type SchoolRow = {
   isActive: boolean;
   deletedAt: Date | string | null;
   _count: {
-    booths: number;
+    campuses: number;
     submissions: number;
-    counterScopes: number;
   };
 };
 
@@ -92,7 +91,7 @@ export function SchoolManager({ schools }: Props) {
         <div>
           <h3 className="text-lg font-semibold text-slate-900">新增学校</h3>
           <p className="mt-1 text-sm text-slate-500">
-            新增后会自动出现在问卷学校选项中，并初始化两种信件类型的编号计数器。
+            新增后会创建默认「主校区」摆点校区，并初始化该校区的两种信件类型编号计数器。
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -137,9 +136,8 @@ export function SchoolManager({ schools }: Props) {
                 <th className="px-4 py-3">学校代码</th>
                 <th className="px-4 py-3">学校名称</th>
                 <th className="px-4 py-3">状态</th>
-                <th className="px-4 py-3">摊位数</th>
+                <th className="px-4 py-3">校区数</th>
                 <th className="px-4 py-3">历史记录数</th>
-                <th className="px-4 py-3">计数器数</th>
                 <th className="px-4 py-3">操作</th>
               </tr>
             </thead>
@@ -151,9 +149,8 @@ export function SchoolManager({ schools }: Props) {
                   <td className="px-4 py-3">
                     {school.deletedAt ? "已删除归档" : school.isActive ? "启用中" : "已停用"}
                   </td>
-                  <td className="px-4 py-3">{school._count.booths}</td>
+                  <td className="px-4 py-3">{school._count.campuses}</td>
                   <td className="px-4 py-3">{school._count.submissions}</td>
-                  <td className="px-4 py-3">{school._count.counterScopes}</td>
                   <td className="px-4 py-3">
                     {!school.deletedAt ? (
                       <button

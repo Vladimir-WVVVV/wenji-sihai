@@ -5,6 +5,13 @@ export const SCHOOL_OPTIONS = [
   { code: "JLU", name: "吉林大学" },
   { code: "TJU", name: "天津大学" },
   { code: "SEU", name: "东南大学" },
+  { code: "XJTU", name: "西安交通大学" },
+] as const;
+
+/** 武汉大学多校区：校本部摆点；医学部仅作收信去向 */
+export const WHU_CAMPUS_SEED = [
+  { code: "MAIN", name: "校本部", hasBooth: true },
+  { code: "MED", name: "医学部", hasBooth: false },
 ] as const;
 
 export const LETTER_TYPE_OPTIONS = [

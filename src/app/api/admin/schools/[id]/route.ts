@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
+import { countSubmissionsInvolvingSchool } from "@/lib/db";
 import { requireAdminApiSession } from "@/lib/auth";
 import { fail, ok } from "@/lib/response";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -26,9 +27,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     include: {
       _count: {
         select: {
-          booths: true,
-          submissions: true,
-          counterScopes: true,
+          campuses: true,
         },
       },
     },
@@ -42,17 +41,34 @@ export async function DELETE(request: NextRequest, context: Context) {
     return fail("该学校已删除归档", 400);
   }
 
-  if (school._count.submissions > 0) {
+  const submissionInvolveCount = await countSubmissionsInvolvingSchool(school.id);
+
+  if (submissionInvolveCount > 0) {
     const deletedAt = new Date();
     const archived = await prisma.$transaction(async (tx) => {
       await tx.booth.updateMany({
         where: {
-          schoolId: school.id,
           deletedAt: null,
+          OR: [{ campus: { schoolId: school.id } }, { schoolId: school.id }],
         },
         data: {
           isActive: false,
           deletedAt,
+        },
+      });
+
+      await tx.campus.updateMany({
+        where: { schoolId: school.id, deletedAt: null },
+        data: {
+          isEnabled: false,
+          deletedAt,
+          hasBooth: false,
+        },
+      });
+
+      await tx.counterScope.deleteMany({
+        where: {
+          OR: [{ campus: { schoolId: school.id } }, { schoolId: school.id }],
         },
       });
 
@@ -78,10 +94,13 @@ export async function DELETE(request: NextRequest, context: Context) {
         mode: "archived",
         school: {
           ...archived,
-          _count: school._count,
+          _count: {
+            campuses: school._count.campuses,
+            submissions: submissionInvolveCount,
+          },
         },
       },
-      "该学校已有历史业务数据，已归档并从问卷与筛选项中移除；关联摊位已同步归档",
+      "该学校已有历史业务数据，已归档并从问卷与筛选项中移除；关联校区与摊位已同步归档",
     );
   }
 

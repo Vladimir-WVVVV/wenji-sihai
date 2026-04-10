@@ -21,25 +21,33 @@ export async function POST(request: NextRequest) {
   try {
     const result = await prisma.$transaction(
       async (tx) => {
-        const school = await tx.school.findUnique({
-          where: { id: data.schoolId },
+        const activityCampus = await tx.campus.findUnique({
+          where: { id: data.activityCampusId },
+          include: { school: true },
         });
 
-        if (!school || !school.isActive || school.deletedAt) {
-          throw new Error("学校无效、已停用或已删除");
+        if (
+          !activityCampus ||
+          !activityCampus.hasBooth ||
+          !activityCampus.isEnabled ||
+          activityCampus.deletedAt ||
+          !activityCampus.school.isActive ||
+          activityCampus.school.deletedAt
+        ) {
+          throw new Error("活动校区无效、非摆点或已停用");
         }
 
         const booth = await tx.booth.findFirst({
           where: {
             id: data.boothId,
-            schoolId: school.id,
+            campusId: activityCampus.id,
             isActive: true,
             deletedAt: null,
           },
         });
 
         if (!booth) {
-          throw new Error("摊位无效或不属于当前学校");
+          throw new Error("摊位无效或不属于所选活动校区");
         }
 
         const letterType = await tx.letterType.findUnique({
@@ -50,11 +58,50 @@ export async function POST(request: NextRequest) {
           throw new Error("信件类型无效");
         }
 
-        const codes = await generateSubmissionCodes(tx, school.id, letterType.id);
+        let recipientSchoolId: number | null = null;
+        let recipientCampusId: number | null = null;
+
+        if (data.letterTypeCode === "DX") {
+          if (data.recipientSchoolId == null || data.recipientCampusId == null) {
+            throw new Error("定向寄信须选择收信学校与收信校区");
+          }
+
+          const recipientSchool = await tx.school.findUnique({
+            where: { id: data.recipientSchoolId },
+          });
+
+          if (!recipientSchool || !recipientSchool.isActive || recipientSchool.deletedAt) {
+            throw new Error("收信学校无效或已停用");
+          }
+
+          const recipientCampus = await tx.campus.findUnique({
+            where: { id: data.recipientCampusId },
+            include: { school: true },
+          });
+
+          if (
+            !recipientCampus ||
+            recipientCampus.schoolId !== recipientSchool.id ||
+            !recipientCampus.isEnabled ||
+            recipientCampus.deletedAt ||
+            !recipientCampus.school.isActive ||
+            recipientCampus.school.deletedAt
+          ) {
+            throw new Error("收信校区与收信学校不一致，或收信校区已停用");
+          }
+
+          recipientSchoolId = recipientSchool.id;
+          recipientCampusId = recipientCampus.id;
+        }
+
+        const codes = await generateSubmissionCodes(tx, activityCampus.id, letterType.id);
 
         const submission = await tx.submission.create({
           data: {
-            schoolId: school.id,
+            schoolId: activityCampus.schoolId,
+            activityCampusId: activityCampus.id,
+            recipientSchoolId,
+            recipientCampusId,
             boothId: booth.id,
             letterTypeId: letterType.id,
             senderName: data.senderName,
@@ -74,6 +121,9 @@ export async function POST(request: NextRequest) {
           },
           include: {
             school: true,
+            activityCampus: true,
+            recipientSchool: true,
+            recipientCampus: true,
             booth: true,
             letterType: true,
           },
@@ -93,7 +143,16 @@ export async function POST(request: NextRequest) {
         id: result.id,
         displayCode: result.displayCode,
         rawCode: result.rawCode,
-        schoolName: result.school.name,
+        activitySchoolName: result.school.name,
+        activityCampusLabel: `${result.school.name}（${result.activityCampus?.name ?? ""}）`,
+        recipientSchoolName:
+          result.letterType.code === "BDX" ? "—" : (result.recipientSchool?.name ?? "—"),
+        recipientCampusLabel:
+          result.letterType.code === "BDX"
+            ? "—"
+            : result.recipientCampus
+              ? `${result.recipientSchool?.name ?? ""}（${result.recipientCampus.name}）`
+              : "—",
         boothName: result.booth.name,
         letterTypeName: result.letterType.name,
         createdAt: result.createdAt,

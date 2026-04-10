@@ -11,8 +11,19 @@ async function main() {
     throw new Error("请先执行基础 seed：npm run db:seed");
   }
 
+  const mainCampus = await prisma.campus.findUnique({
+    where: { schoolId_code: { schoolId: whu.id, code: "MAIN" } },
+  });
+  const medCampus = await prisma.campus.findUnique({
+    where: { schoolId_code: { schoolId: whu.id, code: "MED" } },
+  });
+
+  if (!mainCampus) {
+    throw new Error("未找到武汉大学校本部校区");
+  }
+
   const booth = await prisma.booth.findFirst({
-    where: { schoolId: whu.id, isActive: true },
+    where: { campusId: mainCampus.id, isActive: true, deletedAt: null },
   });
 
   if (!booth) {
@@ -21,9 +32,16 @@ async function main() {
 
   await prisma.submission.upsert({
     where: { rawCode: "WHU-DX-900" },
-    update: {},
+    update: {
+      activityCampusId: mainCampus.id,
+      recipientSchoolId: whu.id,
+      recipientCampusId: medCampus?.id ?? mainCampus.id,
+    },
     create: {
       schoolId: whu.id,
+      activityCampusId: mainCampus.id,
+      recipientSchoolId: whu.id,
+      recipientCampusId: medCampus?.id ?? mainCampus.id,
       boothId: booth.id,
       letterTypeId: dx.id,
       senderName: "张同学",
@@ -43,9 +61,16 @@ async function main() {
 
   await prisma.submission.upsert({
     where: { rawCode: "WHU-BDX-901" },
-    update: {},
+    update: {
+      activityCampusId: mainCampus.id,
+      recipientSchoolId: null,
+      recipientCampusId: null,
+    },
     create: {
       schoolId: whu.id,
+      activityCampusId: mainCampus.id,
+      recipientSchoolId: null,
+      recipientCampusId: null,
       boothId: booth.id,
       letterTypeId: bdx.id,
       senderName: "王同学",
